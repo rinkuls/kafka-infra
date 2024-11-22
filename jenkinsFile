@@ -1,0 +1,55 @@
+node {
+    // Define constants and environment variables
+    def WORKSPACE = "C:\\Jenkins\\workspace\\kafka-infra"  // Update if needed for your environment
+    def buildNumber = env.BUILD_NUMBER ?: '0'        // Jenkins build number
+    def helmChartName = "kafka-infra"
+    def releaseName = "kafka-infra"
+
+    try {
+        // Stage 1: Clone Repository
+        stage('Clone Repository') {
+            echo "Cloning repository from GitHub..."
+            git url: 'https://github.com/rinkuls/kafka-infra.git',
+                credentialsId: 'springdeploy-user',
+                branch: 'main'
+        }
+
+        // Stage 2: Prepare Namespace and Deploy to Minikube with Helm
+        stage('Deploy to Minikube with Helm') {
+            echo "Deploying to Minikube using Helm"
+
+            // Switch Kubernetes context to Minikube
+            bat 'kubectl config use-context minikube'
+
+
+            // Deploy or upgrade Helm chart
+            bat "helm upgrade --install ${releaseName} ${helmChartName} --namespace kafka-infra"
+
+            // Verify Helm release status
+            bat "helm status ${releaseName} --namespace kafka-infra"
+
+            // Optionally, check pod status after the deployment
+            bat 'kubectl get pods --namespace kafka-infra'
+        }
+    } catch (Exception e) {
+        // Handle errors and send notifications
+        echo "Error occurred: ${e.message}"
+        currentBuild.result = 'FAILED'
+        notifyBuild('FAILED')
+        throw e
+    } finally {
+        // Final cleanup or logs
+        echo "Cleaning up resources"
+    }
+}
+
+// Email notification function
+def notifyBuild(String buildStatus = 'STARTED') {
+    buildStatus = buildStatus ?: 'SUCCESSFUL'
+    def now = new Date()
+    def subject_email = "kafka-infra - Status: ${buildStatus}"
+    def details = """<p>${buildStatus} JOB</p>
+    <p>Job: ${env.JOB_NAME} - Build Number: [${env.BUILD_NUMBER}] - Time: ${now}</p>
+    <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME}</a>"</p>"""
+
+}

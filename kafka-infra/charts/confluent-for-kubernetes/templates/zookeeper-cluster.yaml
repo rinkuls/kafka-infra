@@ -1,0 +1,17 @@
+apiVersion: platform.confluent.io/v1beta1
+kind: Zookeeper
+metadata:
+  name: zookeeper-cluster
+  namespace: kafka-infra
+  labels:
+    app.kubernetes.io/managed-by: "Helm"
+  annotations:
+    meta.helm.sh/release-name: "kafka-infra"
+    meta.helm.sh/release-namespace: "kafka-infra"
+spec:
+  replicas: 1
+  dataVolumeCapacity: "10Gi"
+  logVolumeCapacity: "10Gi"
+  image:
+    application: "confluentinc/cp-zookeeper:7.4.1"
+    init: "confluentinc/cp-init-container:7.4.1"
