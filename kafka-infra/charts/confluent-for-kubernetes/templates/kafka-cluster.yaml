@@ -33,4 +33,4 @@ spec:
     - port: 9092
       targetPort: 9092
   selector:
-    app: kafka  # Updated to match the label in kafka-deployment.yaml
+    app: kafka  # Updated to match the label
